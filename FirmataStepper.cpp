@@ -138,11 +138,11 @@ void FirmataStepper::setStepsToMove(long steps_to_move, int speed, int accel, in
   }
   
   // sent to running stepper
-  if(accel == 0 && decel != 0 && this->run_state == FirmataStepper::RUN) {
+  if(accel == 0 && decel != 0 && this->run_state != FirmataStepper::DECEL) {
     this->run_state = FirmataStepper::DECEL;
-    this->stepCount = this->decel_start;
+    this->stepCount = (this->steps_to_move - decel);
     this->rest = 0;
-    this->accel_count = 0;
+    this->accel_count = -decel;
     
     return;
   }
