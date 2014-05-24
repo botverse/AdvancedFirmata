@@ -129,11 +129,6 @@ void FirmataStepper::setStepsToMove(long steps_to_move, int speed, int accel, in
   unsigned long maxStepLimit;
   unsigned long accelerationLimit;
 
-  this->step_number = 0;
-  this->lastAccelDelay = 0;
-  this->stepCount = 0;
-  this->rest = 0;  
-
   if (steps_to_move < 0) {
     this->direction = FirmataStepper::CCW;
     steps_to_move = -steps_to_move;
@@ -141,6 +136,22 @@ void FirmataStepper::setStepsToMove(long steps_to_move, int speed, int accel, in
   else {
     this->direction = FirmataStepper::CW;
   }
+  
+  // sent to running stepper
+  if(accel == 0 && decel != 0 && this->run_state == FirmataStepper::RUN) {
+    this->run_state = FirmataStepper::DECEL;
+    this->stepCount = this->decel_start;
+    this->rest = 0;
+    this->accel_count = 0;
+    
+    return;
+  }
+  
+  // otherwhise
+  this->step_number = 0;
+  this->lastAccelDelay = 0;
+  this->stepCount = 0;
+  this->rest = 0;  
 
   this->steps_to_move = steps_to_move;
 
