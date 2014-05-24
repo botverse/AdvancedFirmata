@@ -150,7 +150,7 @@ void FirmataStepper::setStepsToMove(long steps_to_move, int speed, int accel, in
 
   // if acceleration or deceleration are not defined
   // start in RUN state and do no decelerate
-  if (accel == 0 || decel == 0) {
+  if (accel == 0 && decel == 0 || decel == 0) {
     this->step_delay = this->min_delay;
 
     this->decel_start = steps_to_move;
@@ -172,21 +172,27 @@ void FirmataStepper::setStepsToMove(long steps_to_move, int speed, int accel, in
     this->running = true;
   }
   else if (steps_to_move != 0) {
-    // set initial step delay
-    // step_delay = 1/tt * sqrt(2*alpha/accel)
-    // step_delay = ( tfreq*0.676/100 )*100 * sqrt( (2*alpha*10000000000) / (accel*100) )/10000
-    this->step_delay = (long)((T1_FREQ_148 * sqrt(alpha_x2/accel)) * 1000);   
-
-    // find out after how many steps does the speed hit the max speed limit.
-    // maxSpeedLimit = speed^2 / (2*alpha*accel)
-    maxStepLimit = (long)speed*speed/(long)(((long)this->ax20000*accel)/100);
-
-    // if we hit max spped limit before 0.5 step it will round to 0.
-    // but in practice we need to move at least 1 step to get any speed at all.
-    if (maxStepLimit == 0) {
-      maxStepLimit = 1;
-    }  
-
+    // if the command is sent to a running servo
+    if(accel == 0) {
+      maxStepLimit = 0;  
+    } 
+    // otherwise we know there will be acceleration
+    else {
+      // set initial step delay
+      // step_delay = 1/tt * sqrt(2*alpha/accel)
+      // step_delay = ( tfreq*0.676/100 )*100 * sqrt( (2*alpha*10000000000) / (accel*100) )/10000
+      this->step_delay = (long)((T1_FREQ_148 * sqrt(alpha_x2/accel)) * 1000);   
+  
+      // find out after how many steps does the speed hit the max speed limit.
+      // maxSpeedLimit = speed^2 / (2*alpha*accel)
+      maxStepLimit = (long)speed*speed/(long)(((long)this->ax20000*accel)/100);
+  
+      // if we hit max spped limit before 0.5 step it will round to 0.
+      // but in practice we need to move at least 1 step to get any speed at all.
+      if (maxStepLimit == 0) {
+        maxStepLimit = 1;
+      }  
+    }
     // find out after how many steps we must start deceleration.
     // n1 = (n1+n2)decel / (accel + decel)
     accelerationLimit = (long)((steps_to_move*decel) / (accel+decel));
@@ -213,7 +219,7 @@ void FirmataStepper::setStepsToMove(long steps_to_move, int speed, int accel, in
     this->decel_start = steps_to_move + this->decel_val;
 
     // if the max spped is so low that we don't need to go via acceleration state.
-    if (this->step_delay <= this->min_delay) {
+    if (this->step_delay <= this->min_delay || accel==0) {
       this->step_delay = this->min_delay;
       this->run_state = FirmataStepper::RUN;
     }
