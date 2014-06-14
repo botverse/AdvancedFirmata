@@ -93,7 +93,7 @@ class FirmataStepper {
       CW = 1
     };
 
-    void setStepsToMove(long steps_to_move, int speed, int accel=0, int decel=0);
+    unsigned long setStepsToMove(long steps_to_move, int speed, int accel=0, int decel=0);
 
     // update the stepper position
 		bool update();

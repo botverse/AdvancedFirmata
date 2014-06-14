@@ -125,7 +125,11 @@ FirmataStepper::FirmataStepper(byte interface,
  * @param accel [optional] Acceleration in 0.01*rad/sec^2
  * @param decel [optional] Deceleration in 0.01*rad/sec^2
  */
-void FirmataStepper::setStepsToMove(long steps_to_move, int speed, int accel, int decel) {
+unsigned long FirmataStepper::setStepsToMove(long steps_to_move, int speed, int accel, int decel) {
+  if(accel == 0 && decel != 0) {
+    if (this->run_state == FirmataStepper::DECEL) return 0;
+  }
+  
   unsigned long maxStepLimit;
   unsigned long accelerationLimit;
 
@@ -138,13 +142,14 @@ void FirmataStepper::setStepsToMove(long steps_to_move, int speed, int accel, in
   }
   
   // sent to running stepper
-  if(accel == 0 && decel != 0 && this->run_state != FirmataStepper::DECEL) {
+  if(accel == 0 && decel != 0) {
+    unsigned long rest = this->stepCount;
     this->run_state = FirmataStepper::DECEL;
-    this->stepCount = (this->steps_to_move - decel);
+    this->stepCount = 0;
     this->rest = 0;
     this->accel_count = -decel;
     
-    return;
+    return rest;
   }
   
   // otherwhise
@@ -169,7 +174,7 @@ void FirmataStepper::setStepsToMove(long steps_to_move, int speed, int accel, in
     this->accel_count = 0;
     this->running = true;
 
-    return;
+    return 0;
   }
 
   // if only moving 1 step
@@ -236,6 +241,8 @@ void FirmataStepper::setStepsToMove(long steps_to_move, int speed, int accel, in
     this->accel_count = 0;
     this->running = true;
   }
+  
+  return 0;
 }
 
 

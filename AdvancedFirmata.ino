@@ -45,6 +45,7 @@
 
 #define MAX_STEPPERS    6     // arbitrary value... may need to adjust
 #define STEPPER_DATA    0x72  // move this to Firmata.h
+#define STEPPER_STEPS_DONE_RESPONSE    0x8a  // response on nr of steps accomplished
 #define STEPPER_CONFIG  0
 #define STEPPER_STEP    1
 #define STEPPER         0x08  // pin configured for stepper motor
@@ -462,6 +463,7 @@ void sysexCallback(byte command, byte argc, byte *argv)
     int stepSpeed;
     int accel;
     int decel;
+    long stepsDoneResponse;
 
     stepCommand = argv[0];
     deviceNum = argv[1];
@@ -500,12 +502,22 @@ void sysexCallback(byte command, byte argc, byte *argv)
         if (stepper[deviceNum]) {
           if (argc >= 8 && argc < 12) {
             // num steps, speed (0.01*rad/sec)
-            stepper[deviceNum]->setStepsToMove(numSteps, stepSpeed); 
+            stepsDoneResponse = stepper[deviceNum]->setStepsToMove(numSteps, stepSpeed); 
           } else if (argc == 12) {
             accel = (argv[8] + (argv[9] << 7));
             decel = (argv[10] + (argv[11] << 7));
             // num steps, speed (0.01*rad/sec), accel (0.01*rad/sec^2), decel (0.01*rad/sec^2)
-            stepper[deviceNum]->setStepsToMove(numSteps, stepSpeed, accel, decel);
+            stepsDoneResponse = stepper[deviceNum]->setStepsToMove(numSteps, stepSpeed, accel, decel);
+          }
+          
+          if (stepsDoneResponse != 0) {
+            Serial.write(START_SYSEX);
+            Serial.write(STEPPER_STEPS_DONE_RESPONSE);
+            Serial.write(deviceNum & 0x7f);
+            Serial.write(stepsDoneResponse >> 14 & 0x7f);
+            Serial.write(stepsDoneResponse >> 7 & 0x7f);
+            Serial.write(stepsDoneResponse & 0x7f);
+            Serial.write(END_SYSEX);
           }
         }
       }
