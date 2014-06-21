@@ -127,7 +127,7 @@ FirmataStepper::FirmataStepper(byte interface,
  */
 unsigned long FirmataStepper::setStepsToMove(long steps_to_move, int speed, int accel, int decel) {
   if(accel == 0 && decel != 0) {
-    if (this->run_state == FirmataStepper::DECEL) return 0;
+    if (this->run_state == FirmataStepper::DECEL) return this->steps_to_move - decel;
   }
   
   unsigned long maxStepLimit;
